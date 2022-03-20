@@ -31,6 +31,34 @@ USE WideWorldImporters
 */
 
 TODO1:
+--Исправленное
+--найдём во внутреннем запросе тех кто делал прожади в этот день
+-- а затем исключим их.
+SELECT p.PersonID,p.FullName 
+FROM Application.People p
+WHERE p.PersonID NOT IN (
+                          SELECT DISTINCT p1.PersonID
+                          FROM Application.People p1 
+                          LEFT JOIN Sales.Invoices i on i.SalespersonPersonID = p1.PersonID
+                          WHERE p1.IsSalesperson = 1
+                            AND i.InvoiceDate = '20150704'
+                         )
+ORDER BY p.PersonID                             
+
+;WITH Who_20150704 (PersonID) AS
+(
+  SELECT DISTINCT p1.PersonID
+  FROM Application.People p1 
+  LEFT JOIN Sales.Invoices i on i.SalespersonPersonID = p1.PersonID
+  WHERE p1.IsSalesperson = 1
+    AND i.InvoiceDate = '20150704'
+)
+SELECT p.PersonID,p.FullName 
+FROM Application.People p
+WHERE p.PersonID NOT IN (SELECT w.PersonID FROM Who_20150704 w)
+ORDER BY p.PersonID
+
+
 -------1 вариант-----------
 SELECT p.FullName,p.PersonID
 FROM Application.People p
