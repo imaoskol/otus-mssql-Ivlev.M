@@ -40,19 +40,32 @@ InvoiceMonth | Aakriti Byrraju    | Abel Spirlea       | Abel Tatarescu | ... (Ð
 01.02.2013   |      7             |        3           |      4         | ...
 -------------+--------------------+--------------------+----------------+----------------------
 */
-SELECT  CASE WHEN DATEPART(DAY,T.InvoiceDate) <> 1 THEN DATEADD(DAY,1,EOMONTH(T.InvoiceDate,-1))
-             ELSE T.InvoiceDate
-        END  
-       ,T.CustomerName, T.count_
-FROM (
-      SELECT i.InvoiceID
-                  ,i.InvoiceDate
-                  ,c.CustomerName
-                  ,COUNT(i.InvoiceID) OVER (PARTITION BY YEAR(i.InvoiceDate), MONTH(i.InvoiceDate), c.CustomerName) as count_
-                  ,ROW_NUMBER() OVER (PARTITION BY YEAR(i.InvoiceDate), MONTH(i.InvoiceDate), c.CustomerName ORDER BY i.InvoiceID) as num_
-            FROM Sales.Invoices i
-            INNER JOIN Sales.Customers c on c.CustomerID = i.CustomerID
-            WHERE c.CustomerID BETWEEN 2 AND 6
-      ) T
-WHERE T.num_ = 1
+DECLARE @CName as NVARCHAR(MAX)
 
+DROP TABLE IF EXISTS #tmp
+CREATE TABLE #tmp (ID INT, DATE_ DATE, NAME_ NVARCHAR(150))
+
+INSERT INTO #tmp (ID, DATE_, NAME_)
+  SELECT i.InvoiceID
+        ,CASE WHEN DATEPART(DAY,i.InvoiceDate) <> 1 THEN DATEADD(DAY,1,EOMONTH(i.InvoiceDate,-1))
+              ELSE i.InvoiceDate
+         END 
+        ,c.CustomerName
+  FROM Sales.Invoices i
+  INNER JOIN Sales.Customers c on c.CustomerID = i.CustomerID
+
+SELECT @CName = ISNULL(@CName + ',','') + QUOTENAME(NAME_)
+FROM (
+      SELECT DISTINCT t.NAME_
+      FROM #tmp t
+     ) AS TT 
+
+DECLARE @SQL NVARCHAR(MAX) 
+SET @SQL = 
+'SELECT *
+FROM #tmp
+PIVOT
+(
+  COUNT(ID) FOR name_ IN (' + @CName + ')) AS PVT ORDER BY date_'
+
+EXEC sys.sp_executesql @SQL
