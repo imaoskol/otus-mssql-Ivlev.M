@@ -54,7 +54,29 @@ PIVOT
 ORDER BY PVT.year_, PVT.month_
 
 
+--Переспал с этим заданием и придумал решение изходя из условий, хотя я так и не понял зачем в дату писать именно первое число как
+--в примере, ведь дата первой покупке в месяце не совпадает с первым числом
+-- Да и вообще формулировка "в разрезе клиентов и месяцев" мне представляется по другому,нежели в примере
 
+;WITH Crazy_CTE (ID, date_, name_)
+AS
+(
+  SELECT i.InvoiceID
+        ,CASE WHEN DATEPART(DAY,i.InvoiceDate) <> 1 THEN DATEADD(DAY,1,EOMONTH(i.InvoiceDate,-1))
+              ELSE i.InvoiceDate
+         END 
+        ,SUBSTRING(c.CustomerName,16, LEN(c.CustomerName)-16) AS CName
+  FROM Sales.Invoices i
+  INNER JOIN Sales.Customers c on c.CustomerID = i.CustomerID
+  WHERE i.CustomerID BETWEEN 2 AND 6
+)
+SELECT *
+FROM Crazy_CTE
+PIVOT
+(
+  COUNT(ID) FOR name_ IN ([Sylvanite, MT], [Peeples Valley, AZ], [Gasport, NY], [Jessie, ND], [Medicine Lodge, KS])
+) AS CrazyPivot
+ORDER BY date_
 
 /*
 2. Для всех клиентов с именем, в котором есть "Tailspin Toys"
