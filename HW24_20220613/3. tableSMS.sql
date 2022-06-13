@@ -1,0 +1,9 @@
+﻿CREATE TABLE WideWorldImporters.Sales.SMS (
+  smsID INT IDENTITY
+ ,transactionID INT NOT NULL
+ ,CustomerName NVARCHAR(100) NOT NULL
+ ,PhoneNumber NVARCHAR(20) NULL
+ ,Status SMALLINT NULL
+ ,CONSTRAINT PK_SMS_smsID PRIMARY KEY CLUSTERED (smsID)
+)
+GO
